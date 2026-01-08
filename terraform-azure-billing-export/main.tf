@@ -163,11 +163,11 @@ resource "time_sleep" "wait_for_role" {
 }
 
 # ==============================================================================
-# COST MANAGEMENT EXPORTS (Optional)
+# COST MANAGEMENT EXPORTS - LEGACY FORMAT (Optional)
 # ==============================================================================
 
 resource "azurerm_subscription_cost_management_export" "cxm" {
-  for_each = var.create_cost_exports && var.create_storage_account ? toset(local.export_subscription_ids) : toset([])
+  for_each = var.create_cost_exports && var.create_storage_account && var.export_format == "legacy" ? toset(local.export_subscription_ids) : toset([])
 
   name            = "${var.prefix}-export-${random_id.uniq.hex}"
   subscription_id = "/subscriptions/${each.value}"
@@ -184,6 +184,60 @@ resource "azurerm_subscription_cost_management_export" "cxm" {
   export_data_options {
     type       = var.export_type
     time_frame = "MonthToDate"
+  }
+
+  depends_on = [time_sleep.wait_for_role]
+}
+
+# ==============================================================================
+# COST MANAGEMENT EXPORTS - FOCUS FORMAT (Optional)
+# ==============================================================================
+# Uses azapi provider to create FOCUS exports via Azure REST API
+# FOCUS = FinOps Open Cost and Usage Specification (cross-cloud standard)
+
+resource "azapi_resource" "focus_export" {
+  for_each = var.create_cost_exports && var.create_storage_account && var.export_format == "focus" ? toset(local.export_subscription_ids) : toset([])
+
+  type      = "Microsoft.CostManagement/exports@2024-08-01"
+  name      = "${var.prefix}-focus-export-${random_id.uniq.hex}"
+  parent_id = "/subscriptions/${each.value}"
+
+  # Disable schema validation as FOCUS is not in the published schema yet
+  schema_validation_enabled = false
+
+  body = {
+    properties = {
+      definition = {
+        type      = "FocusCost"
+        timeframe = "MonthToDate"
+        dataSet = {
+          granularity = "Daily"
+          configuration = {
+            dataVersion = var.focus_version
+          }
+        }
+      }
+      deliveryInfo = {
+        destination = {
+          resourceId     = local.storage_account_id
+          container      = azurerm_storage_container.cxm[0].name
+          rootFolderPath = var.root_folder_path
+          type           = "AzureBlob"
+        }
+      }
+      schedule = {
+        status     = "Active"
+        recurrence = var.export_recurrence
+        recurrencePeriod = {
+          from = formatdate("YYYY-MM-DD'T'00:00:00'Z'", timestamp())
+          to   = formatdate("YYYY-MM-DD'T'00:00:00'Z'", timeadd(timestamp(), "87600h"))
+        }
+      }
+      format                = "Parquet"
+      partitionData         = true
+      dataOverwriteBehavior = "OverwritePreviousReport"
+      compressionMode       = "snappy"
+    }
   }
 
   depends_on = [time_sleep.wait_for_role]

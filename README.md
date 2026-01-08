@@ -150,6 +150,7 @@ terraform-azure-cxm-integration/
 | terraform | >= 1.9.0 |
 | azurerm | ~> 4.0 |
 | azuread | ~> 3.0 |
+| azapi | >= 2.0.0 |
 | random | >= 3.5.0 |
 | time | >= 0.9.0 |
 
@@ -159,6 +160,7 @@ terraform-azure-cxm-integration/
 |------|-------------|
 | azurerm | Azure Resource Manager provider |
 | azuread | Azure Active Directory provider |
+| azapi | Azure REST API provider (for FOCUS exports) |
 
 ## Inputs
 

@@ -86,6 +86,39 @@ variable "create_cost_exports" {
   EOT
 }
 
+variable "export_format" {
+  type        = string
+  default     = "focus"
+  description = <<-EOT
+    (Only used when create_cost_exports = true)
+    Format of the cost export to create:
+
+    - "focus": FOCUS format (recommended) - FinOps Open Cost and Usage Specification
+      Standardized cross-cloud format, includes both actual and amortized costs.
+      Uses azapi provider to call Azure REST API.
+
+    - "legacy": Legacy Azure format using azurerm provider
+      Creates ActualCost or AmortizedCost exports (set via export_type variable).
+  EOT
+
+  validation {
+    condition     = contains(["focus", "legacy"], var.export_format)
+    error_message = "export_format must be 'focus' or 'legacy'."
+  }
+}
+
+variable "focus_version" {
+  type        = string
+  default     = "1.0"
+  description = <<-EOT
+    (Only used when export_format = "focus")
+    FOCUS specification version to use:
+    - "1.0": Stable version (recommended)
+    - "1.0r2": Revision 2
+    - "1.0-preview(v1)": Preview version
+  EOT
+}
+
 variable "export_subscriptions" {
   type        = list(string)
   default     = []
