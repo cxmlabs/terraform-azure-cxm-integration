@@ -254,7 +254,66 @@ variable "billing_export_storage_resource_group" {
   description = <<-EOT
     Resource group of the billing export storage account.
 
-    Required when enable_billing_export_access = true.
+    Required when enable_billing_export_access = true (unless billing_export_create_storage_account = true).
+  EOT
+}
+
+variable "billing_export_create_storage_account" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+    Create a new storage account for billing exports instead of using an existing one.
+
+    When true:
+    - A new storage account will be created
+    - billing_export_storage_account_name and billing_export_storage_resource_group are optional
+    - If not provided, names will be auto-generated
+  EOT
+}
+
+variable "billing_export_create_cost_exports" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+    [EXPERIMENTAL] Create Cost Management exports with CXM's preferred configuration.
+
+    Set to false (default) if exports already exist and you only need read access.
+    Set to true to create optimized exports for CXM analysis.
+
+    Note: Requires billing_export_create_storage_account = true.
+
+    WARNING: This feature is experimental. The Azure Cost Management export API
+    may change, and FOCUS format support varies by billing account type.
+    For production use, we recommend creating exports manually via Azure Portal.
+  EOT
+}
+
+variable "billing_export_format" {
+  type        = string
+  default     = "focus"
+  description = <<-EOT
+    Format of the cost export to create (only used when billing_export_create_cost_exports = true):
+
+    - "focus" (default): FOCUS format - FinOps Open Cost and Usage Specification
+      Standardized cross-cloud format with Parquet output and Snappy compression.
+      Includes both actual and amortized costs in one export.
+
+    - "legacy": Legacy Azure format using azurerm provider
+      Creates ActualCost or AmortizedCost exports (set via billing_export_type).
+  EOT
+
+  validation {
+    condition     = contains(["focus", "legacy"], var.billing_export_format)
+    error_message = "billing_export_format must be 'focus' or 'legacy'."
+  }
+}
+
+variable "billing_export_location" {
+  type        = string
+  default     = "westeurope"
+  description = <<-EOT
+    Azure region for the new billing export storage account.
+    Only used when billing_export_create_storage_account = true.
   EOT
 }
 

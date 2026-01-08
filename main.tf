@@ -75,11 +75,15 @@ module "billing_export" {
   # Service Principal to grant access to
   service_principal_id = local.service_principal_id
 
-  # Storage account configuration (existing)
+  # Storage account configuration
   storage_account_name           = var.billing_export_storage_account_name
   storage_account_resource_group = var.billing_export_storage_resource_group
-  create_storage_account         = false
-  create_cost_exports            = false
+  create_storage_account         = var.billing_export_create_storage_account
+  location                       = var.billing_export_location
+
+  # Cost export configuration
+  create_cost_exports = var.billing_export_create_cost_exports
+  export_format       = var.billing_export_format
 
   # Naming
   prefix = var.prefix
@@ -145,13 +149,18 @@ resource "terraform_data" "validate_billing_export" {
 
   lifecycle {
     precondition {
-      condition     = var.billing_export_storage_account_name != ""
-      error_message = "billing_export_storage_account_name is required when enable_billing_export_access is true."
+      condition     = var.billing_export_create_storage_account || var.billing_export_storage_account_name != ""
+      error_message = "billing_export_storage_account_name is required when enable_billing_export_access is true (unless billing_export_create_storage_account is true)."
     }
 
     precondition {
-      condition     = var.billing_export_storage_resource_group != ""
-      error_message = "billing_export_storage_resource_group is required when enable_billing_export_access is true."
+      condition     = var.billing_export_create_storage_account || var.billing_export_storage_resource_group != ""
+      error_message = "billing_export_storage_resource_group is required when enable_billing_export_access is true (unless billing_export_create_storage_account is true)."
+    }
+
+    precondition {
+      condition     = !var.billing_export_create_cost_exports || var.billing_export_create_storage_account
+      error_message = "billing_export_create_storage_account must be true when billing_export_create_cost_exports is true."
     }
   }
 }
