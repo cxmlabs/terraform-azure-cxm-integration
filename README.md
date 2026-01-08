@@ -100,6 +100,26 @@ module "cxm_integration" {
 }
 ```
 
+### Create FOCUS Exports (Experimental)
+
+> **Warning**: This feature is experimental. We recommend creating exports manually via Azure Portal for production use.
+
+```hcl
+module "cxm_integration" {
+  source = "path/to/terraform-azure-cxm-integration"
+
+  enable_billing_export_access = true
+
+  # Create new storage account and FOCUS exports
+  billing_export_create_storage_account = true
+  billing_export_create_cost_exports    = true
+  billing_export_format                 = "focus"
+  billing_export_location               = "westeurope"
+
+  # ... rest of configuration
+}
+```
+
 ## Authentication Methods
 
 ### Client Secret (Default)
@@ -197,6 +217,10 @@ terraform-azure-cxm-integration/
 |------|-------------|------|---------|
 | billing_export_storage_account_name | Storage account for cost exports | string | "" |
 | billing_export_storage_resource_group | Resource group for cost exports storage | string | "" |
+| billing_export_create_storage_account | Create new storage account for exports | bool | false |
+| billing_export_create_cost_exports | **[Experimental]** Create FOCUS exports | bool | false |
+| billing_export_format | Export format: "focus" or "legacy" | string | "focus" |
+| billing_export_location | Azure region for new storage account | string | "westeurope" |
 | activity_log_storage_account_name | Storage account for activity logs | string | "" |
 | activity_log_storage_resource_group | Resource group for activity logs storage | string | "" |
 
