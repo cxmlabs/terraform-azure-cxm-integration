@@ -36,3 +36,8 @@ output "role_definition_id" {
   description = "ID of the custom role definition created for billing export access"
   value       = azurerm_role_definition.cxm_billing_reader.role_definition_resource_id
 }
+
+output "focus_path" {
+  description = "Glob path to the FOCUS export parquet files (derived when created here, else the caller-provided path)"
+  value       = local.focus_path
+}

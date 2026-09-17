@@ -19,6 +19,9 @@
 
 data "azurerm_subscription" "primary" {}
 
+# All enabled subscriptions in the tenant, used to resolve all_subscriptions.
+data "azurerm_subscriptions" "available" {}
+
 # ==============================================================================
 # SERVICE PRINCIPAL MODULE
 # ==============================================================================
@@ -53,12 +56,12 @@ module "subscription_enablement" {
   # Service Principal to grant access to
   service_principal_id = local.service_principal_id
 
-  # Scope configuration
-  use_management_group    = var.use_management_group
-  management_group_id     = var.management_group_id
-  all_subscriptions       = var.all_subscriptions
-  subscription_ids        = var.subscription_ids
-  subscription_exclusions = var.subscription_exclusions
+  # Scope configuration. Subscriptions are resolved once at the root (applying
+  # all_subscriptions/exclusions) and passed in explicitly, so grants and the
+  # onboarding output always agree.
+  use_management_group = var.use_management_group
+  management_group_id  = var.management_group_id
+  subscription_ids     = local.enabled_subscription_ids
 
   depends_on = [module.service_principal]
 }
@@ -84,6 +87,7 @@ module "billing_export" {
   # Cost export configuration
   create_cost_exports = var.billing_export_create_cost_exports
   export_format       = var.billing_export_format
+  focus_path          = var.billing_export_focus_path
 
   # Naming
   prefix = var.prefix

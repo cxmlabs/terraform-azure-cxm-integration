@@ -170,6 +170,16 @@ variable "root_folder_path" {
   EOT
 }
 
+variable "focus_path" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+    Glob path to an existing FOCUS export's parquet files
+    (az://<container>/<root>/<export>/**/*.parquet), echoed back via the focus_path output.
+    Ignored when this module creates the export - the path is then derived from what it creates.
+  EOT
+}
+
 # ==============================================================================
 # COMMON CONFIGURATION
 # ==============================================================================
