@@ -11,9 +11,9 @@ locals {
   create_service_principal = !var.use_existing_ad_application
 
   # Feature enablement
-  enable_asset_discovery     = var.enable_asset_discovery
-  enable_billing_export      = var.enable_billing_export_access && var.billing_export_storage_account_name != ""
-  enable_activity_log        = var.enable_activity_log_access && var.activity_log_storage_account_name != ""
+  enable_asset_discovery = var.enable_asset_discovery
+  enable_billing_export  = var.enable_billing_export_access && (var.billing_export_storage_account_name != "" || var.billing_export_create_storage_account)
+  enable_activity_log    = var.enable_activity_log_access && var.activity_log_storage_account_name != ""
 
   # =============================================================================
   # IDENTITY VALUES
@@ -38,10 +38,18 @@ locals {
   # SUBSCRIPTION LIST
   # =============================================================================
 
-  # Get the list of enabled subscription IDs from the subscription enablement module
-  enabled_subscription_ids = var.enable_asset_discovery ? (
-    module.subscription_enablement[0].subscription_ids
-  ) : []
+  # Subscriptions CXM will crawl. Resolved once here (single source of truth) so
+  # the onboarding output is correct even when asset discovery is off (e.g.
+  # billing-only); the subscription-enablement module is fed this same list.
+  enabled_subscription_ids = var.use_management_group ? [] : (
+    var.all_subscriptions ? [
+      for s in data.azurerm_subscriptions.available.subscriptions :
+      s.subscription_id
+      if s.state == "Enabled" && !contains(var.subscription_exclusions, s.subscription_id)
+      ] : (
+      length(var.subscription_ids) > 0 ? var.subscription_ids : [data.azurerm_subscription.primary.subscription_id]
+    )
+  )
 
   # =============================================================================
   # TAGS

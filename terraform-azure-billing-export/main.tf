@@ -32,6 +32,16 @@ locals {
   storage_container_id = var.create_storage_account ? (
     azurerm_storage_container.cxm[0].id
   ) : null
+
+  # FOCUS export glob path. Derived when this module creates the export;
+  # otherwise the caller-provided path for the existing-export case.
+  created_container_name = one(azurerm_storage_container.cxm[*].name)
+  derived_focus_path = (
+    var.create_cost_exports && var.create_storage_account && var.export_format == "focus" && local.created_container_name != null
+    ) ? (
+    "az://${local.created_container_name}/${trim(var.root_folder_path, "/")}/${var.prefix}-focus-export-${random_id.uniq.hex}/**/*.parquet"
+  ) : null
+  focus_path = local.derived_focus_path != null ? local.derived_focus_path : (var.focus_path != "" ? var.focus_path : null)
 }
 
 # ==============================================================================

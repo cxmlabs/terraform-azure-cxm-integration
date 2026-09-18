@@ -27,6 +27,7 @@ module "cxm_integration" {
   # Storage accounts for cost and activity data (must already exist)
   billing_export_storage_account_name   = "mycompanycostexports"
   billing_export_storage_resource_group = "finops-rg"
+  billing_export_focus_path             = "az://cost-exports/daily/cxm-daily-export-focus/**/*.parquet"
 
   activity_log_storage_account_name   = "mycompanyactivitylogs"
   activity_log_storage_resource_group = "logging-rg"

@@ -317,6 +317,22 @@ variable "billing_export_location" {
   EOT
 }
 
+variable "billing_export_focus_path" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+    Glob path to the existing FOCUS cost-export parquet files, echoed back in the
+    onboarding output as azure_focus_path so CXM knows where to read cost data.
+
+    Required (for the common existing-export case) when enable_billing_export_access = true.
+    Format: az://<container>/<root-folder>/<export-name>/**/*.parquet
+    Example: az://cost-exports/daily/cxm-daily-export-focus/**/*.parquet
+
+    Leave empty only when billing_export_create_cost_exports = true, in which case the
+    path is derived from the export this module creates.
+  EOT
+}
+
 # ==============================================================================
 # ACTIVITY LOG STORAGE CONFIGURATION
 # ==============================================================================

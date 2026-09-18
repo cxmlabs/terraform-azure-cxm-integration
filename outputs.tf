@@ -8,19 +8,22 @@
 
 output "cxm_onboarding_values" {
   description = <<-EOT
-    Values to provide to CXM during onboarding.
-    Copy these values to the CXM onboarding form or provide via API.
+    Values to provide to CXM during onboarding. The keys match the Azure datasource
+    inputs exactly, so this block pastes straight into the CXM onboarding form/API.
 
-    IMPORTANT: If using client_secret authentication, the client_secret is sensitive.
+    IMPORTANT: If using client_secret authentication, azure_client_secret is sensitive.
     Use `terraform output -json cxm_onboarding_values` to retrieve all values including secrets.
   EOT
   sensitive   = true
   value = {
-    tenant_id             = data.azurerm_subscription.primary.tenant_id
-    client_id             = local.client_id
-    authentication_method = var.authentication_method
-    client_secret         = local.client_secret
-    subscription_ids      = local.enabled_subscription_ids
+    azure_tenant_id                      = data.azurerm_subscription.primary.tenant_id
+    azure_client_id                      = local.client_id
+    authentication_method                = var.authentication_method
+    azure_client_secret                  = local.client_secret
+    azure_subscription_ids               = local.enabled_subscription_ids
+    azure_billing_export_storage_account = local.enable_billing_export ? module.billing_export[0].storage_account_name : null
+    azure_billing_export_resource_group  = local.enable_billing_export ? module.billing_export[0].storage_account_resource_group : null
+    azure_focus_path                     = local.enable_billing_export ? module.billing_export[0].focus_path : null
   }
 }
 
@@ -85,6 +88,11 @@ output "billing_export_storage_account" {
 output "billing_export_storage_resource_group" {
   description = "Resource group of the billing export storage account"
   value       = local.enable_billing_export ? module.billing_export[0].storage_account_resource_group : null
+}
+
+output "billing_export_focus_path" {
+  description = "Glob path to the FOCUS export parquet files CXM reads cost data from"
+  value       = local.enable_billing_export ? module.billing_export[0].focus_path : null
 }
 
 # ==============================================================================
