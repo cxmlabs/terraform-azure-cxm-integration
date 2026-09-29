@@ -90,31 +90,64 @@ resource "azurerm_storage_account" "cxm" {
 # CUSTOM ROLE DEFINITION
 # ==============================================================================
 
+# ==============================================================================
+# STORAGE ACCESS — scoped to the one storage account, never its resource group
+#
+# CPL-167. This used to be part of the role below, assigned at resource-group
+# scope, so every storage account in the customer's resource group was in range —
+# including any added to it later. We ask for one account's export data; the
+# grant has to say exactly that and nothing else.
+# ==============================================================================
+
+resource "azurerm_role_definition" "cxm_activity_log_reader_storage" {
+  name        = "${var.prefix}-activity-log-storage-reader-${random_id.uniq.hex}"
+  scope       = local.storage_account_id
+  description = "Allows CXM to read activity-log data from this storage account only"
+
+  permissions {
+    actions = concat(
+      [
+        "Microsoft.Storage/storageAccounts/read",
+        "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+      ],
+      # listKeys returns the account's shared keys, which are root credentials
+      # for its whole data plane — read, write and delete on every blob, share,
+      # queue and table, bypassing RBAC. Off unless a deployment proves it needs
+      # them; `blobs/read` below is what reading exports actually requires.
+      var.grant_storage_account_keys ? ["Microsoft.Storage/storageAccounts/listkeys/action"] : []
+    )
+
+    data_actions = [
+      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
+    ]
+  }
+
+  assignable_scopes = [local.storage_account_id]
+}
+
+resource "azurerm_role_assignment" "cxm_activity_log_reader_storage" {
+  scope              = local.storage_account_id
+  role_definition_id = azurerm_role_definition.cxm_activity_log_reader_storage.role_definition_resource_id
+  principal_id       = var.service_principal_id
+
+  skip_service_principal_aad_check = true
+}
+
 resource "azurerm_role_definition" "cxm_activity_log_reader" {
   name        = "${var.prefix}-activity-log-reader-${random_id.uniq.hex}"
   scope       = "/subscriptions/${data.azurerm_subscription.primary.subscription_id}"
-  description = "Allows CXM to read activity log data from the storage account"
+  description = "Allows CXM to read activity-log configuration metadata in this resource group"
 
   permissions {
     actions = [
       # Resource group read
       "Microsoft.Resources/subscriptions/resourceGroups/read",
 
-      # Storage account read
-      "Microsoft.Storage/storageAccounts/read",
-      "Microsoft.Storage/storageAccounts/blobServices/containers/read",
-      "Microsoft.Storage/storageAccounts/listkeys/action",
-
       # Event Grid (for future notifications)
       "Microsoft.EventGrid/eventSubscriptions/read",
 
       # Diagnostic settings read
       "Microsoft.Insights/diagnosticSettings/read"
-    ]
-
-    data_actions = [
-      # Read blob data
-      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
     ]
   }
 
