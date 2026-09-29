@@ -144,3 +144,22 @@ variable "wait_time" {
   default     = "30s"
   description = "Time to wait for Azure role assignment propagation"
 }
+
+variable "grant_storage_account_keys" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+    Grant Microsoft.Storage/storageAccounts/listkeys/action on the export
+    storage account.
+
+    listKeys returns the account's shared access keys, which are root
+    credentials for its entire data plane: read, write and delete on every
+    blob, file share, queue and table in it, bypassing RBAC. That contradicts
+    the read-only and no-data-plane claims we make to customers, so it is off
+    by default (CPL-167).
+
+    Reading export data needs only the blobs/read data action, which the role
+    grants unconditionally. Set this to true only if a deployment is proven to
+    need account keys, and record why.
+  EOT
+}
