@@ -118,12 +118,7 @@ resource "azurerm_storage_container" "cxm" {
 # ==============================================================================
 
 # ==============================================================================
-# STORAGE ACCESS — scoped to the one storage account, never its resource group
-#
-# CPL-167. This used to be part of the role below, assigned at resource-group
-# scope, so every storage account in the customer's resource group was in range —
-# including any added to it later. We ask for one account's export data; the
-# grant has to say exactly that and nothing else.
+# STORAGE ACCESS — scoped to the storage account, not its resource group
 # ==============================================================================
 
 resource "azurerm_role_definition" "cxm_billing_reader_storage" {
@@ -137,10 +132,8 @@ resource "azurerm_role_definition" "cxm_billing_reader_storage" {
         "Microsoft.Storage/storageAccounts/read",
         "Microsoft.Storage/storageAccounts/blobServices/containers/read",
       ],
-      # listKeys returns the account's shared keys, which are root credentials
-      # for its whole data plane — read, write and delete on every blob, share,
-      # queue and table, bypassing RBAC. Off unless a deployment proves it needs
-      # them; `blobs/read` below is what reading exports actually requires.
+      # listKeys returns the account's shared keys: full data-plane access,
+      # bypassing RBAC. Reading exports only needs blobs/read below.
       var.grant_storage_account_keys ? ["Microsoft.Storage/storageAccounts/listkeys/action"] : []
     )
 
