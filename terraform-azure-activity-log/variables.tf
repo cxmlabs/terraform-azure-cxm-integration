@@ -144,3 +144,9 @@ variable "wait_time" {
   default     = "30s"
   description = "Time to wait for Azure role assignment propagation"
 }
+
+variable "grant_storage_account_keys" {
+  type        = bool
+  default     = false
+  description = "Grant listkeys/action on the export storage account. Shared keys give full data-plane access, bypassing RBAC; reading exports only needs the blobs/read data action."
+}

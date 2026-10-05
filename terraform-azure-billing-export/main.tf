@@ -117,31 +117,57 @@ resource "azurerm_storage_container" "cxm" {
 # CUSTOM ROLE DEFINITION
 # ==============================================================================
 
+# ==============================================================================
+# STORAGE ACCESS — scoped to the storage account, not its resource group
+# ==============================================================================
+
+resource "azurerm_role_definition" "cxm_billing_reader_storage" {
+  name        = "${var.prefix}-billing-export-storage-reader-${random_id.uniq.hex}"
+  scope       = local.storage_account_id
+  description = "Allows CXM to read billing-export data from this storage account only"
+
+  permissions {
+    actions = concat(
+      [
+        "Microsoft.Storage/storageAccounts/read",
+        "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+      ],
+      # listKeys returns the account's shared keys: full data-plane access,
+      # bypassing RBAC. Reading exports only needs blobs/read below.
+      var.grant_storage_account_keys ? ["Microsoft.Storage/storageAccounts/listkeys/action"] : []
+    )
+
+    data_actions = [
+      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
+    ]
+  }
+
+  assignable_scopes = [local.storage_account_id]
+}
+
+resource "azurerm_role_assignment" "cxm_billing_reader_storage" {
+  scope              = local.storage_account_id
+  role_definition_id = azurerm_role_definition.cxm_billing_reader_storage.role_definition_resource_id
+  principal_id       = var.service_principal_id
+
+  skip_service_principal_aad_check = true
+}
+
 resource "azurerm_role_definition" "cxm_billing_reader" {
   name        = "${var.prefix}-billing-export-reader-${random_id.uniq.hex}"
   scope       = "/subscriptions/${data.azurerm_subscription.primary.subscription_id}"
-  description = "Allows CXM to read cost export data from the storage account"
+  description = "Allows CXM to read billing-export configuration metadata in this resource group"
 
   permissions {
     actions = [
       # Resource group read
       "Microsoft.Resources/subscriptions/resourceGroups/read",
 
-      # Storage account read
-      "Microsoft.Storage/storageAccounts/read",
-      "Microsoft.Storage/storageAccounts/blobServices/containers/read",
-      "Microsoft.Storage/storageAccounts/listkeys/action",
-
       # Event Grid (for future notifications)
       "Microsoft.EventGrid/eventSubscriptions/read",
 
       # Cost Management exports read
       "Microsoft.CostManagement/exports/read"
-    ]
-
-    data_actions = [
-      # Read blob data
-      "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
     ]
   }
 
