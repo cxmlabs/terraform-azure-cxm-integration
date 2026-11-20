@@ -290,7 +290,22 @@ Custom role with:
 - Manual equivalent:
 
   ```bash
-  az role assignment create --assignee <service_principal_id> --role "Reservations Reader" --scope /providers/Microsoft.Capacity
+  az role assignment create --assignee <client-id> --role "Reservations Reader" --scope /providers/Microsoft.Capacity
+  ```
+
+- If you already gave this role manually, import that assignment before you apply. Otherwise Azure refuses the second assignment with `RoleAssignmentExists`. Get the assignment ID:
+
+  ```bash
+  az role assignment list --assignee <client-id> --scope /providers/Microsoft.Capacity --query "[].id" -o tsv
+  ```
+
+  Then add an `import` block next to the module call. Replace `cxm_integration` with the name of your module call:
+
+  ```hcl
+  import {
+    to = module.cxm_integration.azurerm_role_assignment.reservations_reader[0]
+    id = "/providers/Microsoft.Capacity/providers/Microsoft.Authorization/roleAssignments/<assignment-name>"
+  }
   ```
 
 ## Security Considerations
