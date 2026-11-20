@@ -118,6 +118,10 @@ variable "enable_reservations_reader" {
 
     Note: The identity that runs Terraform must have role assignment rights at
     tenant scope, for example a Global Administrator with elevated access.
+    After the apply, remove the elevated access. Each later plan reads the
+    assignment, so the identity then needs Microsoft.Authorization/roleAssignments/read
+    at /providers/Microsoft.Capacity, or elevated access again. To disable the
+    role or destroy the module, elevate access again.
   EOT
 }
 

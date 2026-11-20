@@ -286,7 +286,8 @@ Custom role with:
 ### Reservations Reader (Optional)
 
 - **Reservations Reader** at scope `/providers/Microsoft.Capacity`: read all reservations of the tenant, including Databricks commit units (DBCU)
-- The identity that runs Terraform needs role assignment rights at tenant scope. A Global Administrator gets them with [elevated access](https://learn.microsoft.com/azure/role-based-access-control/elevate-access-global-admin).
+- The identity that runs Terraform needs role assignment rights at tenant scope. A Global Administrator gets them with [elevated access](https://learn.microsoft.com/azure/role-based-access-control/elevate-access-global-admin). After the apply, remove the elevated access.
+- Each later plan reads the assignment at `/providers/Microsoft.Capacity`. The identity that runs Terraform then needs `Microsoft.Authorization/roleAssignments/read` at that scope, or elevated access again. To disable the role or destroy the module, elevate access again.
 - Manual equivalent:
 
   ```bash
@@ -296,15 +297,15 @@ Custom role with:
 - If you already gave this role manually, import that assignment before you apply. Otherwise Azure refuses the second assignment with `RoleAssignmentExists`. Get the assignment ID:
 
   ```bash
-  az role assignment list --assignee <client-id> --scope /providers/Microsoft.Capacity --query "[].id" -o tsv
+  az role assignment list --assignee <client-id> --role "Reservations Reader" --scope /providers/Microsoft.Capacity --query "[].id" -o tsv
   ```
 
-  Then add an `import` block next to the module call. Replace `cxm_integration` with the name of your module call:
+  Then add an `import` block next to the module call. Replace `cxm_integration` with the name of your module call. Paste the printed ID as it is in place of `<assignment-id>`:
 
   ```hcl
   import {
     to = module.cxm_integration.azurerm_role_assignment.reservations_reader[0]
-    id = "/providers/Microsoft.Capacity/providers/Microsoft.Authorization/roleAssignments/<assignment-name>"
+    id = "<assignment-id>"
   }
   ```
 
