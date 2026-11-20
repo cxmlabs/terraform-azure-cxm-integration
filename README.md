@@ -160,7 +160,8 @@ terraform-azure-cxm-integration/
 ├── terraform-azure-service-principal/         # Azure AD identity
 ├── terraform-azure-subscription-enablement/   # Resource read access
 ├── terraform-azure-billing-export/            # Cost export access
-└── terraform-azure-activity-log/              # Activity log access
+├── terraform-azure-activity-log/              # Activity log access
+└── terraform-azure-databricks-access/         # Databricks system tables access (optional, per workspace)
 ```
 
 ## Requirements
@@ -281,6 +282,10 @@ Custom role with:
 ### Directory Reader (Optional)
 
 - Read Users, Groups, and Service Principals from Microsoft Graph API
+
+### Databricks Access (Optional)
+
+- Read-only access to the Databricks system tables, and a dedicated SQL warehouse. See [terraform-azure-databricks-access](./terraform-azure-databricks-access/README.md).
 
 ## Security Considerations
 
