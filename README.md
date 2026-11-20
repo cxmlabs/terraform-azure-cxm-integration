@@ -200,6 +200,7 @@ terraform-azure-cxm-integration/
 | enable_billing_export_access | Enable access to Cost Management exports | bool | true |
 | enable_activity_log_access | Enable access to Activity Logs | bool | true |
 | enable_directory_reader | Enable Directory Reader role | bool | true |
+| enable_reservations_reader | Enable Reservations Reader role at tenant scope | bool | false |
 
 ### Scope Configuration
 
@@ -281,6 +282,32 @@ Custom role with:
 ### Directory Reader (Optional)
 
 - Read Users, Groups, and Service Principals from Microsoft Graph API
+
+### Reservations Reader (Optional)
+
+- **Reservations Reader** at scope `/providers/Microsoft.Capacity`: read all reservations of the tenant, including Databricks commit units (DBCU)
+- The identity that runs Terraform needs role assignment rights at tenant scope. A Global Administrator gets them with [elevated access](https://learn.microsoft.com/azure/role-based-access-control/elevate-access-global-admin).
+- Each later plan reads the assignment at `/providers/Microsoft.Capacity`. After the apply, before you remove the elevated access, give the identity that runs Terraform **Reservations Reader** at `/providers/Microsoft.Capacity`. This role includes `Microsoft.Authorization/roleAssignments/read`, so later plans can read the assignment. Then remove the elevated access. To disable the role or destroy the module, elevate access again.
+- Manual equivalent:
+
+  ```bash
+  az role assignment create --assignee <client-id> --role "Reservations Reader" --scope /providers/Microsoft.Capacity
+  ```
+
+- If you already gave this role manually, import that assignment before you apply. Otherwise Azure refuses the second assignment with `RoleAssignmentExists`. Get the assignment ID:
+
+  ```bash
+  az role assignment list --assignee <client-id> --role "Reservations Reader" --scope /providers/Microsoft.Capacity --query "[].id" -o tsv
+  ```
+
+  Then add an `import` block next to the module call. Replace `cxm_integration` with the name of your module call. Paste the printed ID as it is in place of `<assignment-id>`:
+
+  ```hcl
+  import {
+    to = module.cxm_integration.azurerm_role_assignment.reservations_reader[0]
+    id = "<assignment-id>"
+  }
+  ```
 
 ## Security Considerations
 

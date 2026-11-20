@@ -122,6 +122,22 @@ module "activity_log" {
 }
 
 # ==============================================================================
+# RESERVATIONS READER
+# ==============================================================================
+
+# Reservations live outside subscriptions, so subscription Reader does not cover them.
+resource "azurerm_role_assignment" "reservations_reader" {
+  count = var.enable_reservations_reader ? 1 : 0
+
+  scope                            = "/providers/Microsoft.Capacity"
+  role_definition_name             = "Reservations Reader"
+  principal_id                     = local.service_principal_id
+  skip_service_principal_aad_check = true
+
+  depends_on = [module.service_principal]
+}
+
+# ==============================================================================
 # VALIDATION
 # ==============================================================================
 
