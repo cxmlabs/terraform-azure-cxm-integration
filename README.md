@@ -286,8 +286,8 @@ Custom role with:
 ### Reservations Reader (Optional)
 
 - **Reservations Reader** at scope `/providers/Microsoft.Capacity`: read all reservations of the tenant, including Databricks commit units (DBCU)
-- The identity that runs Terraform needs role assignment rights at tenant scope. A Global Administrator gets them with [elevated access](https://learn.microsoft.com/azure/role-based-access-control/elevate-access-global-admin). After the apply, remove the elevated access.
-- Each later plan reads the assignment at `/providers/Microsoft.Capacity`. The identity that runs Terraform then needs `Microsoft.Authorization/roleAssignments/read` at that scope, or elevated access again. To disable the role or destroy the module, elevate access again.
+- The identity that runs Terraform needs role assignment rights at tenant scope. A Global Administrator gets them with [elevated access](https://learn.microsoft.com/azure/role-based-access-control/elevate-access-global-admin).
+- Each later plan reads the assignment at `/providers/Microsoft.Capacity`. After the apply, before you remove the elevated access, give the identity that runs Terraform **Reservations Reader** at `/providers/Microsoft.Capacity`. This role includes `Microsoft.Authorization/roleAssignments/read`, so later plans can read the assignment. Then remove the elevated access. To disable the role or destroy the module, elevate access again.
 - Manual equivalent:
 
   ```bash
