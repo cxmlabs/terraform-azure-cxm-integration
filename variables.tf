@@ -107,6 +107,20 @@ variable "enable_activity_log_access" {
   EOT
 }
 
+variable "enable_reservations_reader" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+    Enable the Reservations Reader role at tenant scope (/providers/Microsoft.Capacity).
+
+    When enabled, CXM can read all reservations of the tenant, including
+    Databricks commit unit (DBCU) reservations, for commitment coverage analysis.
+
+    Note: The identity that runs Terraform must have role assignment rights at
+    tenant scope, for example a Global Administrator with elevated access.
+  EOT
+}
+
 # ==============================================================================
 # SCOPE CONFIGURATION
 # ==============================================================================

@@ -200,6 +200,7 @@ terraform-azure-cxm-integration/
 | enable_billing_export_access | Enable access to Cost Management exports | bool | true |
 | enable_activity_log_access | Enable access to Activity Logs | bool | true |
 | enable_directory_reader | Enable Directory Reader role | bool | true |
+| enable_reservations_reader | Enable Reservations Reader role at tenant scope | bool | false |
 
 ### Scope Configuration
 
@@ -281,6 +282,16 @@ Custom role with:
 ### Directory Reader (Optional)
 
 - Read Users, Groups, and Service Principals from Microsoft Graph API
+
+### Reservations Reader (Optional)
+
+- **Reservations Reader** at scope `/providers/Microsoft.Capacity`: read all reservations of the tenant, including Databricks commit units (DBCU)
+- The identity that runs Terraform needs role assignment rights at tenant scope. A Global Administrator gets them with [elevated access](https://learn.microsoft.com/azure/role-based-access-control/elevate-access-global-admin).
+- Manual equivalent:
+
+  ```bash
+  az role assignment create --assignee <service_principal_id> --role "Reservations Reader" --scope /providers/Microsoft.Capacity
+  ```
 
 ## Security Considerations
 
