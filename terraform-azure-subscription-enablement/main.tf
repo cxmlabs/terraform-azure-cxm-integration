@@ -17,7 +17,7 @@ locals {
         s.subscription_id
         if s.state == "Enabled" && !contains(var.subscription_exclusions, s.subscription_id)
       ]
-    ) : (
+      ) : (
       # Use provided subscription IDs, or default to primary subscription
       length(var.subscription_ids) > 0 ? var.subscription_ids : [data.azurerm_subscription.primary.subscription_id]
     )
