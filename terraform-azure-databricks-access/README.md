@@ -15,6 +15,14 @@ The module uses the existing CXM Service Principal. It does not create a new Azu
 The system tables of a metastore cover all its workspaces. Call the module once per metastore, in one workspace of that metastore, each with its own `databricks` provider.
 
 ```hcl
+terraform {
+  required_providers {
+    databricks = {
+      source = "databricks/databricks"
+    }
+  }
+}
+
 provider "databricks" {
   host = "https://adb-1234567890123456.7.azuredatabricks.net"
 }

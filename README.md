@@ -290,7 +290,7 @@ Custom role with:
 
 ## Security Considerations
 
-1. **Least Privilege**: The module grants read-only access. No write or delete permissions are granted.
+1. **Least Privilege**: The module grants read-only access and adds no write or delete grant. With the optional Databricks access, the CXM service principal keeps the default grants of the workspace `users` group (see [Databricks Access (Optional)](#databricks-access-optional)).
 
 2. **Data Plane Exclusion**: Access to actual data in services (e.g., database contents, storage blobs outside of export containers) is NOT granted.
 
