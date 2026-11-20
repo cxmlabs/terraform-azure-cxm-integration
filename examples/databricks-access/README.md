@@ -9,7 +9,7 @@ This example installs the CXM integration and gives its Service Principal read-o
 3. Existing storage accounts for:
    - Cost Management exports
    - Activity logs
-4. An Azure Databricks workspace attached to a Unity Catalog metastore. You are a workspace admin of the workspace and a metastore admin of its metastore.
+4. An Azure Databricks workspace attached to a Unity Catalog metastore. You are a workspace admin of the workspace, and both a metastore admin of its metastore and an account admin.
 5. The system schemas are enabled, as the [Azure Databricks Access guide](https://docs.cloudexmachina.io/setup/csp-configuration/azure-setup/databricks) says
 
 ## Usage

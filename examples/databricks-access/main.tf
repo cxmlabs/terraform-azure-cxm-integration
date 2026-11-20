@@ -4,11 +4,13 @@
 #
 # This example installs the CXM integration and gives its Service Principal
 # read-only access to the Databricks system tables, in one configuration.
-# Add one databricks provider and one module block per metastore, in one
-# workspace of that metastore.
+# For a second metastore, add a databricks provider with an alias for one
+# workspace of that metastore, and a second module block with
+# providers = { databricks = databricks.<alias> }.
 #
-# The identity that runs Terraform must be a workspace admin and a metastore
-# admin. A metastore admin enables the system schemas first.
+# The identity that runs Terraform must be a workspace admin, and both a
+# metastore admin and an account admin. A metastore admin enables the system
+# schemas first.
 #
 # ==============================================================================
 

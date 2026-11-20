@@ -286,6 +286,7 @@ Custom role with:
 ### Databricks Access (Optional)
 
 - Read-only access to the Databricks system tables, and a dedicated SQL warehouse. See [terraform-azure-databricks-access](./terraform-azure-databricks-access/README.md).
+- The CXM service principal joins the workspace `users` group, as each workspace user does. On a workspace with a workspace catalog, workspace users get `USE CATALOG` on that catalog, and `USE SCHEMA`, `CREATE TABLE`, `CREATE VOLUME`, `CREATE MODEL`, `CREATE FUNCTION` and `CREATE MATERIALIZED VIEW` on its `default` schema ([Admin privileges in Unity Catalog](https://learn.microsoft.com/azure/databricks/data-governance/unity-catalog/manage-privileges/admin-privileges)). The module adds no revoke. To see these grants, run `SHOW GRANTS ON CATALOG <workspace-catalog>;` and `SHOW GRANTS ON SCHEMA <workspace-catalog>.default;`.
 
 ## Security Considerations
 
