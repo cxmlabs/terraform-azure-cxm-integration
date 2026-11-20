@@ -121,5 +121,6 @@ output "features_enabled" {
     billing_export_access     = local.enable_billing_export
     activity_log_access       = local.enable_activity_log
     directory_reader          = var.enable_directory_reader && local.create_service_principal
+    reservations_reader       = var.enable_reservations_reader
   }
 }
