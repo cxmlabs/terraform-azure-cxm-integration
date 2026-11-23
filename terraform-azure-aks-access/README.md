@@ -75,7 +75,7 @@ import {
 |------|-------------|------|---------|
 | service_principal_id | Object ID of the CXM Service Principal | string | - |
 | subscription_ids | Subscriptions that get the role (subscription mode) | list(string) | [] |
-| use_management_group | Make the role assignable at the management group, and assign it on each of its subscriptions | bool | false |
+| use_management_group | Make the role assignable at the management group, and assign it on each subscription of the management group that is Enabled and not in `subscription_exclusions` | bool | false |
 | management_group_id | ID of the management group (management-group mode) | string | "" |
 | subscription_exclusions | Subscriptions that get no assignment in management-group mode | list(string) | [] |
 
@@ -85,4 +85,5 @@ import {
 |------|-------------|
 | role_definition_id | GUID of the CXM AKS Reader role, the same in each assignable scope |
 | assignment_scopes | Scopes of the role assignments, one /subscriptions/<id> for each subscription, sorted |
+| principal_ids | Principal IDs of the role assignments: the CXM Service Principal |
 | role_name | Name of the custom role |

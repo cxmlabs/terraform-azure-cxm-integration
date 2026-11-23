@@ -1,5 +1,5 @@
 # ==============================================================================
-# AKS Access - plan tests with mock providers (no Azure tenant is read)
+# AKS Access - tests with mock providers (no Azure tenant is read)
 # ==============================================================================
 
 mock_provider "azurerm" {

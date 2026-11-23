@@ -28,8 +28,9 @@ variable "use_management_group" {
   default     = false
   description = <<-EOT
     Make the role assignable at the management group, and assign it on each
-    subscription of the management group that is in the state Enabled. Azure cannot assign a custom role
-    with data actions at a management-group scope.
+    subscription of the management group that is Enabled and not in
+    subscription_exclusions. Azure cannot assign a custom role with data
+    actions at a management-group scope.
   EOT
 }
 

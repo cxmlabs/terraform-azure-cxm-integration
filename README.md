@@ -4,11 +4,12 @@ This Terraform module enables CXM (Cloud ex Machina) to access your Microsoft Az
 
 ## Overview
 
-The module creates the necessary Azure resources to grant CXM read-only access to:
+The module creates the necessary Azure resources to grant CXM read access to:
 
 - **Asset Discovery**: Read access to all Azure resources for infrastructure analysis
 - **Cost Data**: Read access to Cost Management exports for cost analysis
 - **Activity Logs**: Read access to Activity Logs for change tracking and security analysis
+- **AKS (optional)**: Read access to the Kubernetes API of the AKS clusters, except Secrets, with the exceptions in [AKS Access (Optional)](#aks-access-optional)
 
 ## Quick Start
 
@@ -338,9 +339,9 @@ The role holds no ARM action. The Reader role of the integration gives CXM the A
 
 ## Security Considerations
 
-1. **Least Privilege**: The module grants read-only access and adds no write or delete grant, except that the optional AKS access allows `get` on `nodes/proxy` and other proxy subresources, which can run commands in pods (see [AKS Access (Optional)](#aks-access-optional)). With the optional Databricks access, the CXM service principal keeps the default grants of the workspace `users` group (see [Databricks Access (Optional)](#databricks-access-optional)).
+1. **Least Privilege**: The module grants read-only access and adds no write or delete grant, except that the optional AKS access allows `get` on `nodes/proxy`, `pods/proxy` and `services/proxy`, and, before Kubernetes 1.35, on `pods/attach` and `pods/portforward`, which can run commands in pods or send requests to workloads (see [AKS Access (Optional)](#aks-access-optional)). With the optional Databricks access, the CXM service principal keeps the default grants of the workspace `users` group (see [Databricks Access (Optional)](#databricks-access-optional)).
 
-2. **Data Plane Exclusion**: Access to actual data in services (e.g., database contents, storage blobs outside of export containers) is NOT granted, except that the optional AKS access reads the Kubernetes API, but no Secrets.
+2. **Data Plane Exclusion**: Access to actual data in services (e.g., database contents, storage blobs outside of export containers) is NOT granted, except with the optional AKS access: the role reads the Kubernetes API, and its proxy subresources can send requests to workloads and run commands in pods, which can read the Secrets that the pods mount (see [AKS Access (Optional)](#aks-access-optional)).
 
 3. **Federated Credentials**: For enhanced security, consider using federated credentials instead of client secrets.
 
