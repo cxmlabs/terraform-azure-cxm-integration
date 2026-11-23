@@ -320,7 +320,7 @@ Set `enable_aks_access = true` to give CXM read access to the Kubernetes API of 
 - dataActions: `Microsoft.ContainerService/managedClusters/*/read`
 - notDataActions: `Microsoft.ContainerService/managedClusters/secrets/read`
 
-The role reads all Kubernetes objects except Secrets. ConfigMaps and pod specs can hold plain-text values, and the role reads them. The role also reads pod logs, which can hold plain-text values too.
+The role reads all Kubernetes objects except Secrets. ConfigMaps and pod specs can hold plain-text values, and the role reads them. The role also reads pod logs, which can hold plain-text values too. The role reads nodes. On AKS, this also allows `get` on `nodes/proxy`, which can run commands in pods through the kubelet. AKS has no separate data action to deny it.
 
 The role holds no ARM action. The Reader role of the integration gives CXM the API server address of each cluster, and Entra ID gives CXM its token.
 
