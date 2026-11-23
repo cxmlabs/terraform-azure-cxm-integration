@@ -46,7 +46,6 @@ resource "azurerm_role_definition" "aks_reader" {
   scope = var.use_management_group ? local.management_group_scope : local.primary_scope
 
   permissions {
-    actions          = ["Microsoft.ContainerService/managedClusters/listClusterUserCredential/action"]
     data_actions     = ["Microsoft.ContainerService/managedClusters/*/read"]
     not_data_actions = ["Microsoft.ContainerService/managedClusters/secrets/read"]
   }

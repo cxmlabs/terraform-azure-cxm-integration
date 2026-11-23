@@ -61,7 +61,7 @@ run "subscription_scope" {
 
   assert {
     condition = (
-      toset(azurerm_role_definition.aks_reader.permissions[0].actions) == toset(["Microsoft.ContainerService/managedClusters/listClusterUserCredential/action"]) &&
+      try(length(azurerm_role_definition.aks_reader.permissions[0].actions), 0) == 0 &&
       toset(azurerm_role_definition.aks_reader.permissions[0].data_actions) == toset(["Microsoft.ContainerService/managedClusters/*/read"]) &&
       toset(azurerm_role_definition.aks_reader.permissions[0].not_data_actions) == toset(["Microsoft.ContainerService/managedClusters/secrets/read"]) &&
       try(length(azurerm_role_definition.aks_reader.permissions[0].not_actions), 0) == 0
@@ -247,6 +247,25 @@ run "root_wiring" {
   assert {
     condition     = output.features_enabled.aks_access == true
     error_message = "features_enabled.aks_access must be true."
+  }
+}
+
+# all_subscriptions with an exclusion makes local.enabled_subscription_ids differ
+# from var.subscription_ids, so the run proves which list the root passes.
+run "root_subscription_mode" {
+  command = plan
+
+  variables {
+    enable_billing_export_access = false
+    enable_activity_log_access   = false
+    enable_aks_access            = true
+    all_subscriptions            = true
+    subscription_exclusions      = ["00000000-0000-0000-0000-000000000004"]
+  }
+
+  assert {
+    condition     = module.aks_access[0].assignment_scopes == tolist(["/subscriptions/00000000-0000-0000-0000-000000000003"])
+    error_message = "The root module must pass local.enabled_subscription_ids to module.aks_access."
   }
 }
 

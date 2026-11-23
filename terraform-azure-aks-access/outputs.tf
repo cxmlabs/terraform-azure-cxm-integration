@@ -7,6 +7,11 @@ output "role_definition_id" {
   value       = azurerm_role_definition.aks_reader.role_definition_id
 }
 
+output "assignment_scopes" {
+  description = "The scopes of the role assignments, one /subscriptions/<id> for each subscription."
+  value       = sort(keys(azurerm_role_assignment.aks_reader))
+}
+
 output "role_name" {
   description = "Name of the custom role."
   value       = azurerm_role_definition.aks_reader.name

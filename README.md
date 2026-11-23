@@ -316,14 +316,16 @@ Custom role with:
 
 Set `enable_aks_access = true` to give CXM read access to the Kubernetes API of the AKS clusters. The [AKS Access module](terraform-azure-aks-access/) creates the custom role **CXM AKS Reader** and assigns it to the CXM Service Principal:
 
-- actions: `Microsoft.ContainerService/managedClusters/listClusterUserCredential/action`
+- actions: none
 - dataActions: `Microsoft.ContainerService/managedClusters/*/read`
 - notDataActions: `Microsoft.ContainerService/managedClusters/secrets/read`
 
-The role reads all Kubernetes objects except Secrets. ConfigMaps and pod specs can hold plain-text values, and the role reads them.
+The role reads all Kubernetes objects except Secrets. ConfigMaps and pod specs can hold plain-text values, and the role reads them. The role also reads pod logs, which can hold plain-text values too.
+
+The role holds no ARM action. The Reader role of the integration gives CXM the API server address of each cluster, and Entra ID gives CXM its token.
 
 - Safe clusters: clusters with Entra ID and Azure RBAC.
-- **Cluster without Entra ID: full admin access.** On a cluster that does not use Entra ID, the action `listClusterUserCredential` returns the cluster-admin credential. CXM would then read Secrets and write any object. Before you enable this module, enable Entra ID with Azure RBAC on each cluster of the assigned subscriptions, and disable local accounts. Or exclude the subscriptions that hold such clusters: remove them from `subscription_ids`, or add them to `subscription_exclusions`.
+- A cluster without Entra ID and Azure RBAC gives CXM no access: the role holds no action that gets a cluster credential.
 - A cluster with Entra ID and Kubernetes RBAC only authorizes each request with Kubernetes RBAC, not with the Azure role. It needs an in-cluster ClusterRoleBinding, which this module does not create.
 - A private cluster, or a cluster with authorized IP ranges, must let the CXM egress reach its API server.
 - Each assignment is on a subscription, because Azure cannot assign a custom role with data actions at a management-group scope. In management-group mode, the role is assignable at the management group, and a subscription that joins it later gets its assignment at the next apply.
