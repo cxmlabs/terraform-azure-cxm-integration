@@ -19,7 +19,7 @@ data "azurerm_subscriptions" "available" {
   count = var.use_management_group ? 1 : 0
 }
 
-# The subscription of the provider. It does not move when subscription_ids change.
+# The subscription of the provider.
 data "azurerm_subscription" "primary" {}
 
 locals {

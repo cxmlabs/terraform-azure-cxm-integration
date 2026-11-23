@@ -139,9 +139,10 @@ variable "enable_aks_access" {
     The role holds no ARM action, so a cluster without Entra ID and Azure
     RBAC gives CXM no access.
 
-    In management-group mode, the role is assignable at the management group,
-    and each subscription of the management group gets an assignment. A new
-    subscription gets its assignment at the next apply.
+    In management-group mode, the role is assignable at the management group.
+    Only the subscriptions in the state Enabled, and not in
+    subscription_exclusions, get an assignment. A new subscription gets its
+    assignment at the next apply.
   EOT
 }
 
@@ -219,10 +220,8 @@ variable "subscription_exclusions" {
   type        = list(string)
   default     = []
   description = <<-EOT
-    List of subscription IDs to exclude when using all_subscriptions = true.
-    Has no effect when all_subscriptions = false.
-    In management-group mode, the AKS access module (enable_aks_access) also
-    makes no assignment on these subscriptions.
+    Subscription IDs to exclude. Applies when all_subscriptions = true, and
+    in management-group mode to the AKS access module (enable_aks_access) only.
 
     Use this to skip sandbox, development, or other non-production subscriptions.
   EOT

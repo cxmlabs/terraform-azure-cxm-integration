@@ -85,7 +85,7 @@ run "subscription_scope" {
   }
 
   assert {
-    condition     = alltrue([for k, a in azurerm_role_assignment.aks_reader : a.scope == k && a.principal_id == "00000000-0000-0000-0000-0000000000cc"])
+    condition     = alltrue([for k, a in azurerm_role_assignment.aks_reader : a.scope == k && a.principal_id == "00000000-0000-0000-0000-0000000000cc" && a.skip_service_principal_aad_check])
     error_message = "Each assignment must give the role to the CXM service principal on its subscription."
   }
 }
@@ -151,6 +151,11 @@ run "management_group_scope" {
   assert {
     condition     = azurerm_role_definition.aks_reader.assignable_scopes == tolist(["/providers/Microsoft.Management/managementGroups/mg-cxm"])
     error_message = "The assignable scope must be the management group only."
+  }
+
+  assert {
+    condition     = azurerm_role_definition.aks_reader.scope == "/providers/Microsoft.Management/managementGroups/mg-cxm"
+    error_message = "The definition scope must be the management group."
   }
 
   assert {
@@ -226,6 +231,37 @@ run "management_group_exclusion" {
   }
 }
 
+# With command = plan, role_definition_id is unknown. A mocked apply with a fixed
+# role ID proves that each assignment uses the custom role.
+run "assignment_uses_the_custom_role" {
+  command = apply
+
+  module {
+    source = "./terraform-azure-aks-access"
+  }
+
+  providers = {
+    azurerm = azurerm
+  }
+
+  override_resource {
+    target = azurerm_role_definition.aks_reader
+    values = {
+      role_definition_id = "11111111-1111-1111-1111-111111111111"
+    }
+  }
+
+  variables {
+    service_principal_id = "00000000-0000-0000-0000-0000000000cc"
+    subscription_ids     = ["00000000-0000-0000-0000-000000000002"]
+  }
+
+  assert {
+    condition     = alltrue([for k, a in azurerm_role_assignment.aks_reader : a.role_definition_id == "${k}/providers/Microsoft.Authorization/roleDefinitions/11111111-1111-1111-1111-111111111111"])
+    error_message = "Each assignment must use the CXM AKS Reader role."
+  }
+}
+
 # The root run creates a new service principal in management-group mode, so the
 # plan proves that the assignments do not wait for the service principal.
 run "root_wiring" {
@@ -237,6 +273,12 @@ run "root_wiring" {
     enable_aks_access            = true
     use_management_group         = true
     management_group_id          = "mg-cxm"
+    subscription_exclusions      = ["00000000-0000-0000-0000-000000000004"]
+  }
+
+  assert {
+    condition     = module.aks_access[0].assignment_scopes == tolist(["/subscriptions/00000000-0000-0000-0000-000000000003"])
+    error_message = "The root module must pass subscription_exclusions to module.aks_access."
   }
 
   assert {
@@ -256,11 +298,20 @@ run "root_subscription_mode" {
   command = plan
 
   variables {
-    enable_billing_export_access = false
-    enable_activity_log_access   = false
-    enable_aks_access            = true
-    all_subscriptions            = true
-    subscription_exclusions      = ["00000000-0000-0000-0000-000000000004"]
+    enable_billing_export_access  = false
+    enable_activity_log_access    = false
+    enable_aks_access             = true
+    all_subscriptions             = true
+    subscription_exclusions       = ["00000000-0000-0000-0000-000000000004"]
+    use_existing_ad_application   = true
+    existing_client_id            = "00000000-0000-0000-0000-0000000000aa"
+    existing_service_principal_id = "00000000-0000-0000-0000-0000000000dd"
+    existing_client_secret        = "test-secret"
+  }
+
+  assert {
+    condition     = module.aks_access[0].principal_ids == tolist(["00000000-0000-0000-0000-0000000000dd"])
+    error_message = "The root module must pass the CXM service principal to module.aks_access."
   }
 
   assert {

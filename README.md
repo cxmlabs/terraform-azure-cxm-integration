@@ -320,15 +320,15 @@ Set `enable_aks_access = true` to give CXM read access to the Kubernetes API of 
 - dataActions: `Microsoft.ContainerService/managedClusters/*/read`
 - notDataActions: `Microsoft.ContainerService/managedClusters/secrets/read`
 
-The role reads all Kubernetes objects except Secrets. ConfigMaps and pod specs can hold plain-text values, and the role reads them. The role also reads pod logs, which can hold plain-text values too. The role reads nodes. On AKS, this also allows `get` on `nodes/proxy`, which can run commands in pods through the kubelet. AKS has no separate data action to deny it.
+The role reads all Kubernetes objects except Secrets. ConfigMaps and pod specs can hold plain-text values, and the role reads them. The role also reads pod logs, which can hold plain-text values too. On AKS, `*/read` also allows `get` on `nodes/proxy`, `pods/proxy` and `services/proxy`, and, before Kubernetes 1.35, on `pods/attach` and `pods/portforward`. These can run commands in pods or send requests to workloads. `pods/exec` stays denied.
 
-The role holds no ARM action. The Reader role of the integration gives CXM the API server address of each cluster, and Entra ID gives CXM its token.
+The role holds no ARM action. The Reader role of the integration gives CXM the API server address of each cluster, and Entra ID gives CXM its token. `enable_aks_access` needs `enable_asset_discovery`, because the Reader role gives CXM the clusters and their API server FQDN.
 
-- Safe clusters: clusters with Entra ID and Azure RBAC.
+- Supported clusters: clusters with Entra ID and Azure RBAC.
 - A cluster without Entra ID and Azure RBAC gives CXM no access: the role holds no action that gets a cluster credential.
 - A cluster with Entra ID and Kubernetes RBAC only authorizes each request with Kubernetes RBAC, not with the Azure role. It needs an in-cluster ClusterRoleBinding, which this module does not create.
 - A private cluster, or a cluster with authorized IP ranges, must let the CXM egress reach its API server.
-- Each assignment is on a subscription, because Azure cannot assign a custom role with data actions at a management-group scope. In management-group mode, the role is assignable at the management group, and a subscription that joins it later gets its assignment at the next apply.
+- Each assignment is on a subscription, because Azure cannot assign a custom role with data actions at a management-group scope. In management-group mode, the role is assignable at the management group. Only the subscriptions in the state `Enabled`, and not in `subscription_exclusions`, get an assignment. A subscription that joins the management group later gets its assignment at the next apply.
 - If you already created this role by hand, import it before you apply, with the `import` blocks of the [AKS Access module](terraform-azure-aks-access/README.md#import-a-role-created-by-hand). The addresses are `module.cxm_integration.module.aks_access[0].azurerm_role_definition.aks_reader` and `module.cxm_integration.module.aks_access[0].azurerm_role_assignment.aks_reader["/subscriptions/<subscription-id>"]`.
 
 ### Databricks Access (Optional)
@@ -338,9 +338,9 @@ The role holds no ARM action. The Reader role of the integration gives CXM the A
 
 ## Security Considerations
 
-1. **Least Privilege**: The module grants read-only access and adds no write or delete grant. With the optional Databricks access, the CXM service principal keeps the default grants of the workspace `users` group (see [Databricks Access (Optional)](#databricks-access-optional)).
+1. **Least Privilege**: The module grants read-only access and adds no write or delete grant, except that the optional AKS access allows `get` on `nodes/proxy` and other proxy subresources, which can run commands in pods (see [AKS Access (Optional)](#aks-access-optional)). With the optional Databricks access, the CXM service principal keeps the default grants of the workspace `users` group (see [Databricks Access (Optional)](#databricks-access-optional)).
 
-2. **Data Plane Exclusion**: Access to actual data in services (e.g., database contents, storage blobs outside of export containers) is NOT granted.
+2. **Data Plane Exclusion**: Access to actual data in services (e.g., database contents, storage blobs outside of export containers) is NOT granted, except that the optional AKS access reads the Kubernetes API, but no Secrets.
 
 3. **Federated Credentials**: For enhanced security, consider using federated credentials instead of client secrets.
 
