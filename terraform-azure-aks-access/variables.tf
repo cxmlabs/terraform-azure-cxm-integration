@@ -33,6 +33,15 @@ variable "use_management_group" {
   EOT
 }
 
+variable "subscription_exclusions" {
+  type        = list(string)
+  default     = []
+  description = <<-EOT
+    The subscription IDs that get no assignment when use_management_group = true.
+    Use it for the subscriptions that hold clusters without Entra ID.
+  EOT
+}
+
 variable "management_group_id" {
   type        = string
   default     = ""

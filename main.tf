@@ -150,10 +150,11 @@ module "aks_access" {
 
   count = var.enable_aks_access ? 1 : 0
 
-  service_principal_id = local.service_principal_id
-  use_management_group = var.use_management_group
-  management_group_id  = var.management_group_id
-  subscription_ids     = local.enabled_subscription_ids
+  service_principal_id    = local.service_principal_id
+  use_management_group    = var.use_management_group
+  management_group_id     = var.management_group_id
+  subscription_ids        = local.enabled_subscription_ids
+  subscription_exclusions = var.subscription_exclusions
 }
 
 # ==============================================================================

@@ -140,7 +140,8 @@ variable "enable_aks_access" {
     returns the cluster-admin credential. CXM would then read Secrets and write
     any object. Enable Entra ID with Azure RBAC, and disable local accounts, on
     each cluster of the assigned subscriptions first. Or exclude the
-    subscriptions that hold such clusters.
+    subscriptions that hold such clusters (subscription_ids, or
+    subscription_exclusions).
 
     In management-group mode, the role is assignable at the management group,
     and each subscription of the management group gets an assignment. A new
@@ -224,6 +225,8 @@ variable "subscription_exclusions" {
   description = <<-EOT
     List of subscription IDs to exclude when using all_subscriptions = true.
     Has no effect when all_subscriptions = false.
+    In management-group mode, the AKS access module (enable_aks_access) also
+    makes no assignment on these subscriptions.
 
     Use this to skip sandbox, development, or other non-production subscriptions.
   EOT

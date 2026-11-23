@@ -5,7 +5,7 @@
 mock_provider "azurerm" {
   mock_data "azurerm_subscription" {
     defaults = {
-      subscription_id = "00000000-0000-0000-0000-000000000009"
+      subscription_id = "00000000-0000-0000-0000-000000000001"
     }
   }
 
@@ -13,7 +13,7 @@ mock_provider "azurerm" {
     defaults = {
       subscriptions = [
         { subscription_id = "00000000-0000-0000-0000-000000000003", state = "Enabled" },
-        { subscription_id = "00000000-0000-0000-0000-000000000004", state = "Disabled" },
+        { subscription_id = "00000000-0000-0000-0000-000000000004", state = "Enabled" },
       ]
     }
   }
@@ -70,12 +70,12 @@ run "subscription_scope" {
   }
 
   assert {
-    condition     = toset(azurerm_role_definition.aks_reader.assignable_scopes) == toset(["/subscriptions/00000000-0000-0000-0000-000000000001", "/subscriptions/00000000-0000-0000-0000-000000000002", "/subscriptions/00000000-0000-0000-0000-000000000009"])
-    error_message = "The assignable scopes must be the two subscriptions and the subscription of the provider."
+    condition     = toset(azurerm_role_definition.aks_reader.assignable_scopes) == toset(["/subscriptions/00000000-0000-0000-0000-000000000001", "/subscriptions/00000000-0000-0000-0000-000000000002"])
+    error_message = "The assignable scopes must be the two subscriptions."
   }
 
   assert {
-    condition     = azurerm_role_definition.aks_reader.scope == "/subscriptions/00000000-0000-0000-0000-000000000009"
+    condition     = azurerm_role_definition.aks_reader.scope == "/subscriptions/00000000-0000-0000-0000-000000000001"
     error_message = "The definition scope must be the subscription of the provider."
   }
 
@@ -107,7 +107,7 @@ run "scope_does_not_move_with_the_list" {
   }
 
   assert {
-    condition     = azurerm_role_definition.aks_reader.scope == "/subscriptions/00000000-0000-0000-0000-000000000009"
+    condition     = azurerm_role_definition.aks_reader.scope == "/subscriptions/00000000-0000-0000-0000-000000000001"
     error_message = "The definition scope must not change when the first subscription changes."
   }
 }
@@ -154,8 +154,8 @@ run "management_group_scope" {
   }
 
   assert {
-    condition     = keys(azurerm_role_assignment.aks_reader) == ["/subscriptions/00000000-0000-0000-0000-000000000003"]
-    error_message = "There must be one assignment for each Enabled subscription of the management group, and none for a Disabled one."
+    condition     = keys(azurerm_role_assignment.aks_reader) == ["/subscriptions/00000000-0000-0000-0000-000000000003", "/subscriptions/00000000-0000-0000-0000-000000000004"]
+    error_message = "There must be one assignment for each subscription of the management group."
   }
 
   assert {
@@ -166,6 +166,63 @@ run "management_group_scope" {
   assert {
     condition     = alltrue([for a in azurerm_role_assignment.aks_reader : a.principal_id == "00000000-0000-0000-0000-0000000000cc"])
     error_message = "Each assignment must give the role to the CXM service principal."
+  }
+}
+
+run "disabled_subscription_skipped" {
+  command = plan
+
+  module {
+    source = "./terraform-azure-aks-access"
+  }
+
+  providers = {
+    azurerm = azurerm
+  }
+
+  override_data {
+    target = data.azurerm_subscriptions.available
+    values = {
+      subscriptions = [
+        { subscription_id = "00000000-0000-0000-0000-000000000003", state = "Enabled" },
+        { subscription_id = "00000000-0000-0000-0000-000000000004", state = "Disabled" },
+      ]
+    }
+  }
+
+  variables {
+    service_principal_id = "00000000-0000-0000-0000-0000000000cc"
+    use_management_group = true
+    management_group_id  = "mg-cxm"
+  }
+
+  assert {
+    condition     = keys(azurerm_role_assignment.aks_reader) == ["/subscriptions/00000000-0000-0000-0000-000000000003"]
+    error_message = "A Disabled subscription must get no assignment."
+  }
+}
+
+run "management_group_exclusion" {
+  command = plan
+
+  module {
+    source = "./terraform-azure-aks-access"
+  }
+
+  providers = {
+    azurerm = azurerm
+  }
+
+  variables {
+    service_principal_id    = "00000000-0000-0000-0000-0000000000cc"
+    use_management_group    = true
+    management_group_id     = "mg-cxm"
+    subscription_exclusions = ["00000000-0000-0000-0000-000000000003"]
+  }
+
+  assert {
+    condition     = keys(azurerm_role_assignment.aks_reader) == ["/subscriptions/00000000-0000-0000-0000-000000000004"]
+    error_message = "An excluded subscription must get no assignment."
   }
 }
 

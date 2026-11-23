@@ -30,7 +30,7 @@ locals {
   ] : []
 
   subscription_ids = var.use_management_group ? [
-    for id in data.azurerm_management_group.target[0].all_subscription_ids : id if contains(local.enabled_subscription_ids, id)
+    for id in data.azurerm_management_group.target[0].all_subscription_ids : id if contains(local.enabled_subscription_ids, id) && !contains(var.subscription_exclusions, id)
   ] : var.subscription_ids
 
   primary_scope = "/subscriptions/${data.azurerm_subscription.primary.subscription_id}"

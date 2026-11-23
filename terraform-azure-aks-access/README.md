@@ -20,7 +20,8 @@ The role is safe only on clusters with Entra ID and Azure RBAC. On these cluster
 
 ## Limits
 
-- **Cluster without Entra ID: full admin access.** On a cluster that does not use Entra ID, the action `listClusterUserCredential` returns the cluster-admin credential ([Microsoft documentation](https://learn.microsoft.com/azure/aks/control-kubeconfig-access): the `clusterUser` role has the same effect as the `clusterAdmin` role). Kubernetes does not check the Azure data actions with this credential. CXM would then read Secrets and write any object. Before you enable this module, enable Entra ID with Azure RBAC on each cluster of the assigned subscriptions, and disable local accounts. Or exclude the subscriptions that hold such clusters.
+- **Cluster without Entra ID: full admin access.** On a cluster that does not use Entra ID, the action `listClusterUserCredential` returns the cluster-admin credential ([Microsoft documentation](https://learn.microsoft.com/azure/aks/control-kubeconfig-access): the `clusterUser` role has the same effect as the `clusterAdmin` role). Kubernetes does not check the Azure data actions with this credential. CXM would then read Secrets and write any object. Before you enable this module, enable Entra ID with Azure RBAC on each cluster of the assigned subscriptions, and disable local accounts. Or exclude the subscriptions that hold such clusters: remove them from `subscription_ids`, or add them to `subscription_exclusions`.
+- A cluster with Entra ID and Kubernetes RBAC only authorizes each request with Kubernetes RBAC, not with the Azure role. It needs an in-cluster ClusterRoleBinding, which this module does not create.
 - A private cluster, or a cluster with authorized IP ranges, must let the CXM egress reach its API server.
 - Azure cannot assign a custom role with data actions at a management-group scope ([custom role limits](https://learn.microsoft.com/azure/role-based-access-control/custom-roles#custom-role-limits)). In management-group mode, the role is assignable at the management group, and each subscription of the management group in the state `Enabled` gets an assignment. A subscription that joins the management group later gets its assignment at the next apply.
 - In subscription mode, the role is assignable on each subscription of `subscription_ids` and on the subscription of the provider. The role is defined on the subscription of the provider, so a change of `subscription_ids` does not replace it. `subscription_ids` must hold at least one subscription. A new subscription needs a new apply.
@@ -74,6 +75,7 @@ import {
 | subscription_ids | Subscriptions that get the role (subscription mode) | list(string) | [] |
 | use_management_group | Make the role assignable at the management group, and assign it on each of its subscriptions | bool | false |
 | management_group_id | ID of the management group (management-group mode) | string | "" |
+| subscription_exclusions | Subscriptions that get no assignment in management-group mode | list(string) | [] |
 
 ## Outputs
 
