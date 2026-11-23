@@ -14,10 +14,26 @@ data "azurerm_management_group" "target" {
   name  = var.management_group_id
 }
 
+# Only the subscriptions in the state Enabled can take a role assignment.
+data "azurerm_subscriptions" "available" {
+  count = var.use_management_group ? 1 : 0
+}
+
+# The subscription of the provider. It does not move when subscription_ids change.
+data "azurerm_subscription" "primary" {}
+
 locals {
   management_group_scope = "/providers/Microsoft.Management/managementGroups/${var.management_group_id}"
 
-  subscription_ids = var.use_management_group ? data.azurerm_management_group.target[0].all_subscription_ids : var.subscription_ids
+  enabled_subscription_ids = var.use_management_group ? [
+    for s in data.azurerm_subscriptions.available[0].subscriptions : s.subscription_id if s.state == "Enabled"
+  ] : []
+
+  subscription_ids = var.use_management_group ? [
+    for id in data.azurerm_management_group.target[0].all_subscription_ids : id if contains(local.enabled_subscription_ids, id)
+  ] : var.subscription_ids
+
+  primary_scope = "/subscriptions/${data.azurerm_subscription.primary.subscription_id}"
 
   subscription_scopes = toset([for id in local.subscription_ids : "/subscriptions/${id}"])
 }
@@ -26,8 +42,8 @@ resource "azurerm_role_definition" "aks_reader" {
   name        = "CXM AKS Reader"
   description = "Read access for CXM to the Kubernetes API of AKS clusters, all objects except Secrets."
 
-  # The first subscription of the sorted list, so a new order does not replace the role.
-  scope = var.use_management_group ? local.management_group_scope : "/subscriptions/${sort(var.subscription_ids)[0]}"
+  # The subscription of the provider, so a new list of subscriptions does not replace the role.
+  scope = var.use_management_group ? local.management_group_scope : local.primary_scope
 
   permissions {
     actions          = ["Microsoft.ContainerService/managedClusters/listClusterUserCredential/action"]
@@ -35,7 +51,14 @@ resource "azurerm_role_definition" "aks_reader" {
     not_data_actions = ["Microsoft.ContainerService/managedClusters/secrets/read"]
   }
 
-  assignable_scopes = var.use_management_group ? [local.management_group_scope] : sort(tolist(local.subscription_scopes))
+  assignable_scopes = var.use_management_group ? [local.management_group_scope] : sort(distinct(concat([local.primary_scope], tolist(local.subscription_scopes))))
+
+  lifecycle {
+    precondition {
+      condition     = var.use_management_group || length(var.subscription_ids) > 0
+      error_message = "subscription_ids must hold at least one subscription when use_management_group is false."
+    }
+  }
 }
 
 resource "azurerm_role_assignment" "aks_reader" {

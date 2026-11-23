@@ -16,14 +16,14 @@ ConfigMaps and pod specs can hold plain-text values, and the role reads them.
 
 ## Supported clusters
 
-The role works on clusters with Entra ID and Azure RBAC. On these clusters, each Kubernetes request is authorized by the Azure role, so no change in the cluster is necessary.
+The role is safe only on clusters with Entra ID and Azure RBAC. On these clusters, each Kubernetes request is authorized by the Azure role, so no change in the cluster is necessary.
 
 ## Limits
 
-- A cluster with Kubernetes RBAC only ignores the Azure role. It needs an in-cluster ClusterRoleBinding, which this module does not create.
+- **Cluster without Entra ID: full admin access.** On a cluster that does not use Entra ID, the action `listClusterUserCredential` returns the cluster-admin credential ([Microsoft documentation](https://learn.microsoft.com/azure/aks/control-kubeconfig-access): the `clusterUser` role has the same effect as the `clusterAdmin` role). Kubernetes does not check the Azure data actions with this credential. CXM would then read Secrets and write any object. Before you enable this module, enable Entra ID with Azure RBAC on each cluster of the assigned subscriptions, and disable local accounts. Or exclude the subscriptions that hold such clusters.
 - A private cluster, or a cluster with authorized IP ranges, must let the CXM egress reach its API server.
-- Azure cannot assign a custom role with data actions at a management-group scope ([custom role limits](https://learn.microsoft.com/azure/role-based-access-control/custom-roles#custom-role-limits)). In management-group mode, the role is assignable at the management group, and each subscription of the management group gets an assignment. A subscription that joins the management group later gets its assignment at the next apply.
-- In subscription mode, the role is assignable on each subscription of `subscription_ids`. A new subscription needs a new apply.
+- Azure cannot assign a custom role with data actions at a management-group scope ([custom role limits](https://learn.microsoft.com/azure/role-based-access-control/custom-roles#custom-role-limits)). In management-group mode, the role is assignable at the management group, and each subscription of the management group in the state `Enabled` gets an assignment. A subscription that joins the management group later gets its assignment at the next apply.
+- In subscription mode, the role is assignable on each subscription of `subscription_ids` and on the subscription of the provider. The role is defined on the subscription of the provider, so a change of `subscription_ids` does not replace it. `subscription_ids` must hold at least one subscription. A new subscription needs a new apply.
 
 ## Usage
 
@@ -52,7 +52,7 @@ az role definition list --name "CXM AKS Reader" --query "[].id" -o tsv
 az role assignment list --assignee <client-id> --role "CXM AKS Reader" --all --query "[].id" -o tsv
 ```
 
-Then add `import` blocks next to the module call. The role ID is the printed role ID, a `|`, and the scope of the role: `/subscriptions/<id>` of the first subscription of the sorted list, or the management group ID in management-group mode. Add one assignment block for each subscription:
+Then add `import` blocks next to the module call. The role ID is the printed role ID, a `|`, and the scope of the role: `/subscriptions/<id>` of the subscription of the provider, or the management group ID in management-group mode. Add one assignment block for each subscription:
 
 ```hcl
 import {

@@ -3,6 +3,21 @@
 # ==============================================================================
 
 mock_provider "azurerm" {
+  mock_data "azurerm_subscription" {
+    defaults = {
+      subscription_id = "00000000-0000-0000-0000-000000000009"
+    }
+  }
+
+  mock_data "azurerm_subscriptions" {
+    defaults = {
+      subscriptions = [
+        { subscription_id = "00000000-0000-0000-0000-000000000003", state = "Enabled" },
+        { subscription_id = "00000000-0000-0000-0000-000000000004", state = "Disabled" },
+      ]
+    }
+  }
+
   mock_data "azurerm_management_group" {
     defaults = {
       id                   = "/providers/Microsoft.Management/managementGroups/mg-cxm"
@@ -55,13 +70,13 @@ run "subscription_scope" {
   }
 
   assert {
-    condition     = toset(azurerm_role_definition.aks_reader.assignable_scopes) == toset(["/subscriptions/00000000-0000-0000-0000-000000000001", "/subscriptions/00000000-0000-0000-0000-000000000002"])
-    error_message = "The assignable scopes must be the two subscriptions."
+    condition     = toset(azurerm_role_definition.aks_reader.assignable_scopes) == toset(["/subscriptions/00000000-0000-0000-0000-000000000001", "/subscriptions/00000000-0000-0000-0000-000000000002", "/subscriptions/00000000-0000-0000-0000-000000000009"])
+    error_message = "The assignable scopes must be the two subscriptions and the subscription of the provider."
   }
 
   assert {
-    condition     = azurerm_role_definition.aks_reader.scope == "/subscriptions/00000000-0000-0000-0000-000000000001"
-    error_message = "The definition scope must be the first subscription of the sorted list."
+    condition     = azurerm_role_definition.aks_reader.scope == "/subscriptions/00000000-0000-0000-0000-000000000009"
+    error_message = "The definition scope must be the subscription of the provider."
   }
 
   assert {
@@ -73,6 +88,47 @@ run "subscription_scope" {
     condition     = alltrue([for k, a in azurerm_role_assignment.aks_reader : a.scope == k && a.principal_id == "00000000-0000-0000-0000-0000000000cc"])
     error_message = "Each assignment must give the role to the CXM service principal on its subscription."
   }
+}
+
+run "scope_does_not_move_with_the_list" {
+  command = plan
+
+  module {
+    source = "./terraform-azure-aks-access"
+  }
+
+  providers = {
+    azurerm = azurerm
+  }
+
+  variables {
+    service_principal_id = "00000000-0000-0000-0000-0000000000cc"
+    subscription_ids     = ["00000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000000000"]
+  }
+
+  assert {
+    condition     = azurerm_role_definition.aks_reader.scope == "/subscriptions/00000000-0000-0000-0000-000000000009"
+    error_message = "The definition scope must not change when the first subscription changes."
+  }
+}
+
+run "empty_subscription_list" {
+  command = plan
+
+  module {
+    source = "./terraform-azure-aks-access"
+  }
+
+  providers = {
+    azurerm = azurerm
+  }
+
+  variables {
+    service_principal_id = "00000000-0000-0000-0000-0000000000cc"
+    subscription_ids     = []
+  }
+
+  expect_failures = [azurerm_role_definition.aks_reader]
 }
 
 run "management_group_scope" {
@@ -98,8 +154,8 @@ run "management_group_scope" {
   }
 
   assert {
-    condition     = keys(azurerm_role_assignment.aks_reader) == ["/subscriptions/00000000-0000-0000-0000-000000000003", "/subscriptions/00000000-0000-0000-0000-000000000004"]
-    error_message = "There must be one assignment for each subscription of the management group."
+    condition     = keys(azurerm_role_assignment.aks_reader) == ["/subscriptions/00000000-0000-0000-0000-000000000003"]
+    error_message = "There must be one assignment for each Enabled subscription of the management group, and none for a Disabled one."
   }
 
   assert {

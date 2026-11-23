@@ -136,6 +136,12 @@ variable "enable_aks_access" {
     Kubernetes API of the AKS clusters that use Entra ID and Azure RBAC: all
     Kubernetes objects except Secrets.
 
+    WARNING: on a cluster without Entra ID, the action listClusterUserCredential
+    returns the cluster-admin credential. CXM would then read Secrets and write
+    any object. Enable Entra ID with Azure RBAC, and disable local accounts, on
+    each cluster of the assigned subscriptions first. Or exclude the
+    subscriptions that hold such clusters.
+
     In management-group mode, the role is assignable at the management group,
     and each subscription of the management group gets an assignment. A new
     subscription gets its assignment at the next apply.
