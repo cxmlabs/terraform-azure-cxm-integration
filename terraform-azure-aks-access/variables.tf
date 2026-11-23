@@ -39,7 +39,7 @@ variable "subscription_exclusions" {
   default     = []
   description = <<-EOT
     The subscription IDs that get no assignment when use_management_group = true.
-    Use it for the subscriptions that hold clusters without Entra ID.
+    Use it for the subscriptions that must not get the role.
   EOT
 }
 

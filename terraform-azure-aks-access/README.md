@@ -4,7 +4,7 @@ Gives the CXM Service Principal read access to the Kubernetes API of the AKS clu
 
 ## What the role reads
 
-The role reads all Kubernetes objects except Secrets:
+The role reads the Kubernetes objects of the cluster. This role does not grant Secrets through the Kubernetes API. A command in a pod can read the Secrets that the pod mounts.
 
 | Permission | Value |
 |------------|-------|
@@ -14,7 +14,7 @@ The role reads all Kubernetes objects except Secrets:
 
 ConfigMaps and pod specs can hold plain-text values, and the role reads them. The role also reads pod logs, which can hold plain-text values too. On AKS, `*/read` also allows `get` on `nodes/proxy`, `pods/proxy` and `services/proxy`, and, before Kubernetes 1.35, on `pods/attach` and `pods/portforward`. These can run commands in pods or send requests to workloads. `pods/exec` stays denied.
 
-The role holds no ARM action. The Reader role of the integration gives CXM the API server address of each cluster, and Entra ID gives CXM its token. `enable_aks_access` needs `enable_asset_discovery`, because the Reader role gives CXM the clusters and their API server FQDN.
+The role holds no ARM action. The Reader role of the integration gives CXM the clusters and the API server address of each cluster, and Entra ID gives CXM its token. For this reason, `enable_aks_access` needs `enable_asset_discovery`.
 
 ## Supported clusters
 
