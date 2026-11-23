@@ -338,3 +338,16 @@ run "disabled_by_default" {
     error_message = "features_enabled.aks_access must be false by default."
   }
 }
+
+run "requires_asset_discovery" {
+  command = plan
+
+  variables {
+    enable_billing_export_access = false
+    enable_activity_log_access   = false
+    enable_asset_discovery       = false
+    enable_aks_access            = true
+  }
+
+  expect_failures = [terraform_data.validate_aks_access]
+}

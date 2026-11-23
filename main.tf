@@ -221,3 +221,20 @@ resource "terraform_data" "validate_activity_log" {
     }
   }
 }
+
+# Validate AKS access configuration
+resource "terraform_data" "validate_aks_access" {
+  count = var.enable_aks_access ? 1 : 0
+
+  lifecycle {
+    precondition {
+      condition     = var.enable_asset_discovery
+      error_message = "enable_aks_access needs enable_asset_discovery: the Reader role comes from asset discovery."
+    }
+
+    precondition {
+      condition     = !var.use_management_group || var.management_group_id != ""
+      error_message = "management_group_id is required when use_management_group is true."
+    }
+  }
+}
