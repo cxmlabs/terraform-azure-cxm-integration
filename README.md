@@ -321,7 +321,7 @@ Set `enable_aks_access = true` to give CXM read access to the Kubernetes API of 
 - dataActions: `Microsoft.ContainerService/managedClusters/*/read`
 - notDataActions: `Microsoft.ContainerService/managedClusters/secrets/read`
 
-The role reads all Kubernetes objects except Secrets. ConfigMaps and pod specs can hold plain-text values, and the role reads them. The role also reads pod logs, which can hold plain-text values too. On AKS, `*/read` also allows `get` on `nodes/proxy`, `pods/proxy` and `services/proxy`, and, before Kubernetes 1.35, on `pods/attach` and `pods/portforward`. These can run commands in pods or send requests to workloads. `pods/exec` stays denied.
+The role reads the Kubernetes objects of the cluster. This role does not grant Secrets through the Kubernetes API. A command in a pod can read the Secrets that the pod mounts. ConfigMaps and pod specs can hold plain-text values, and the role reads them. The role also reads pod logs, which can hold plain-text values too. On AKS, `*/read` also allows `get` on `nodes/proxy`, `pods/proxy` and `services/proxy`, and, before Kubernetes 1.35, on `pods/attach` and `pods/portforward`. These can run commands in pods or send requests to workloads. `pods/exec` stays denied.
 
 The role holds no ARM action. The Reader role of the integration gives CXM the clusters and the API server address of each cluster, and Entra ID gives CXM its token. For this reason, `enable_aks_access` needs `enable_asset_discovery`.
 
@@ -341,7 +341,7 @@ The role holds no ARM action. The Reader role of the integration gives CXM the c
 
 1. **Least Privilege**: The module grants read-only access and adds no write or delete grant. The optional AKS access is an exception: it allows `get` on `nodes/proxy`, `pods/proxy` and `services/proxy`, and, before Kubernetes 1.35, on `pods/attach` and `pods/portforward`. These can run commands in pods or send requests to workloads (see [AKS Access (Optional)](#aks-access-optional)). With the optional Databricks access, the CXM service principal keeps the default grants of the workspace `users` group (see [Databricks Access (Optional)](#databricks-access-optional)).
 
-2. **Data Plane Exclusion**: Access to actual data in services (e.g., database contents, storage blobs outside of export containers) is NOT granted. The optional AKS access is an exception: the role reads the Kubernetes API. Its proxy subresources can send requests to workloads and run commands in pods. This role does not grant Secrets through the Kubernetes API. A command in a pod can read the Secrets that the pod mounts (see [AKS Access (Optional)](#aks-access-optional)).
+2. **Data Plane Exclusion**: Access to actual data in services (for example, database contents, storage blobs outside of export containers) is NOT granted. The optional AKS access is an exception: the role reads the Kubernetes API. Its proxy subresources can send requests to workloads and run commands in pods. This role does not grant Secrets through the Kubernetes API. A command in a pod can read the Secrets that the pod mounts (see [AKS Access (Optional)](#aks-access-optional)).
 
 3. **Federated Credentials**: For enhanced security, consider using federated credentials instead of client secrets.
 
