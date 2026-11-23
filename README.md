@@ -161,6 +161,7 @@ terraform-azure-cxm-integration/
 ├── terraform-azure-subscription-enablement/   # Resource read access
 ├── terraform-azure-billing-export/            # Cost export access
 ├── terraform-azure-activity-log/              # Activity log access
+├── terraform-azure-aks-access/                # AKS Kubernetes API read access (optional)
 └── terraform-azure-databricks-access/         # Databricks system tables access (optional, per workspace)
 ```
 
@@ -202,6 +203,7 @@ terraform-azure-cxm-integration/
 | enable_activity_log_access | Enable access to Activity Logs | bool | true |
 | enable_directory_reader | Enable Directory Reader role | bool | true |
 | enable_reservations_reader | Enable Reservations Reader role at tenant scope | bool | false |
+| enable_aks_access | Create the CXM AKS Reader role and assign it on each subscription | bool | false |
 
 ### Scope Configuration
 
@@ -309,6 +311,22 @@ Custom role with:
     id = "<assignment-id>"
   }
   ```
+
+### AKS Access (Optional)
+
+Set `enable_aks_access = true` to give CXM read access to the Kubernetes API of the AKS clusters. The [AKS Access module](terraform-azure-aks-access/) creates the custom role **CXM AKS Reader** and assigns it to the CXM Service Principal:
+
+- actions: `Microsoft.ContainerService/managedClusters/listClusterUserCredential/action`
+- dataActions: `Microsoft.ContainerService/managedClusters/*/read`
+- notDataActions: `Microsoft.ContainerService/managedClusters/secrets/read`
+
+The role reads all Kubernetes objects except Secrets. ConfigMaps and pod specs can hold plain-text values, and the role reads them.
+
+- Supported clusters: clusters with Entra ID and Azure RBAC.
+- A cluster with Kubernetes RBAC only ignores the Azure role. It needs an in-cluster ClusterRoleBinding, which this module does not create.
+- A private cluster, or a cluster with authorized IP ranges, must let the CXM egress reach its API server.
+- Each assignment is on a subscription, because Azure cannot assign a custom role with data actions at a management-group scope. In management-group mode, the role is assignable at the management group, and a subscription that joins it later gets its assignment at the next apply.
+- If you already created this role by hand, import it before you apply, with the `import` blocks of the [AKS Access module](terraform-azure-aks-access/README.md#import-a-role-created-by-hand). The addresses are `module.cxm_integration.module.aks_access[0].azurerm_role_definition.aks_reader` and `module.cxm_integration.module.aks_access[0].azurerm_role_assignment.aks_reader["/subscriptions/<subscription-id>"]`.
 
 ### Databricks Access (Optional)
 
