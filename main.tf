@@ -138,6 +138,26 @@ resource "azurerm_role_assignment" "reservations_reader" {
 }
 
 # ==============================================================================
+# AKS ACCESS MODULE
+# ==============================================================================
+
+# No depends_on: the management-group mode reads the subscriptions of the
+# management group at plan time, and a depends_on on a new service principal
+# would defer that read and make for_each unknown. principal_id still waits
+# for the service principal through local.service_principal_id.
+module "aks_access" {
+  source = "./terraform-azure-aks-access"
+
+  count = var.enable_aks_access ? 1 : 0
+
+  service_principal_id    = local.service_principal_id
+  use_management_group    = var.use_management_group
+  management_group_id     = var.management_group_id
+  subscription_ids        = local.enabled_subscription_ids
+  subscription_exclusions = var.subscription_exclusions
+}
+
+# ==============================================================================
 # VALIDATION
 # ==============================================================================
 
@@ -198,6 +218,23 @@ resource "terraform_data" "validate_activity_log" {
     precondition {
       condition     = var.activity_log_storage_resource_group != ""
       error_message = "activity_log_storage_resource_group is required when enable_activity_log_access is true."
+    }
+  }
+}
+
+# Validate AKS access configuration
+resource "terraform_data" "validate_aks_access" {
+  count = var.enable_aks_access ? 1 : 0
+
+  lifecycle {
+    precondition {
+      condition     = var.enable_asset_discovery
+      error_message = "enable_aks_access needs enable_asset_discovery: the Reader role comes from asset discovery."
+    }
+
+    precondition {
+      condition     = !var.use_management_group || var.management_group_id != ""
+      error_message = "management_group_id is required when use_management_group is true."
     }
   }
 }

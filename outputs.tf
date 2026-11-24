@@ -122,5 +122,6 @@ output "features_enabled" {
     activity_log_access       = local.enable_activity_log
     directory_reader          = var.enable_directory_reader && local.create_service_principal
     reservations_reader       = var.enable_reservations_reader
+    aks_access                = var.enable_aks_access
   }
 }

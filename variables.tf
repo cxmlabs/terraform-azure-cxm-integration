@@ -127,6 +127,25 @@ variable "enable_reservations_reader" {
   EOT
 }
 
+variable "enable_aks_access" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+    Create the custom role "CXM AKS Reader" and assign it to the CXM Service
+    Principal on each subscription of the integration. CXM can then read the
+    Kubernetes API of the AKS clusters that use Entra ID and Azure RBAC: all
+    Kubernetes objects except Secrets.
+
+    The role holds no ARM action, so a cluster without Entra ID and Azure
+    RBAC gives CXM no access.
+
+    In management-group mode, the role is assignable at the management group.
+    Only the subscriptions in the state Enabled, and not in
+    subscription_exclusions, get an assignment. A new subscription gets its
+    assignment at the next apply.
+  EOT
+}
+
 # ==============================================================================
 # SCOPE CONFIGURATION
 # ==============================================================================
@@ -201,8 +220,8 @@ variable "subscription_exclusions" {
   type        = list(string)
   default     = []
   description = <<-EOT
-    List of subscription IDs to exclude when using all_subscriptions = true.
-    Has no effect when all_subscriptions = false.
+    Subscription IDs to exclude. Applies when all_subscriptions = true, and
+    in management-group mode to the AKS access module (enable_aks_access) only.
 
     Use this to skip sandbox, development, or other non-production subscriptions.
   EOT
